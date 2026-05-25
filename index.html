@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Peta Persebaran Fasilitas & Destinasi Pariwisata di Distrik Hallein, Salzburg, Austria.">
+    <title>Peta Persebaran Fasilitas & Destinasi Pariwisata Hallein, Salzburg, Austria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--navy:#1a3a5c;--navy-dark:#0f2740;--navy-light:#254d73;--gold:#e8a838;--gold-light:#f5c866;--gold-dark:#c78c20;--r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;--ease:all .3s cubic-bezier(.4,0,.2,1)}
+        [data-theme="light"]{--bg:#fff;--bg2:#f8fafc;--bg3:#f1f5f9;--panel:rgba(255,255,255,.95);--ps:#fff;--tx:#1e293b;--tx2:#475569;--tx3:#94a3b8;--brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.11);--hdr:linear-gradient(135deg,#0f2740,#1a3a5c 60%,#254d73);--htx:#fff;--hm:rgba(255,255,255,.55);--tbg:var(--bg);--tour-bg:#eff6ff;--tour-bd:#bfdbfe;--hist-bg:#fffbeb;--hist-bd:#fde68a;--amen-bg:#ecfdf5;--amen-bd:#a7f3d0;--blur:blur(14px);--foot:linear-gradient(135deg,#0f2740,#1a3a5c);--shd:0 4px 14px rgba(0,0,0,.09);--shd2:0 8px 26px rgba(0,0,0,.12)}
+        [data-theme="dark"]{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--panel:rgba(30,41,59,.95);--ps:#1e293b;--tx:#f1f5f9;--tx2:#cbd5e1;--tx3:#64748b;--brd:rgba(255,255,255,.07);--brd2:rgba(255,255,255,.11);--hdr:linear-gradient(135deg,#020617,#0f172a 60%,#1e293b);--htx:#f1f5f9;--hm:rgba(255,255,255,.38);--tbg:var(--bg2);--tour-bg:rgba(59,130,246,.1);--tour-bd:rgba(59,130,246,.2);--hist-bg:rgba(245,158,11,.1);--hist-bd:rgba(245,158,11,.2);--amen-bg:rgba(16,185,129,.1);--amen-bd:rgba(16,185,129,.2);--blur:blur(18px);--foot:linear-gradient(135deg,#020617,#0f172a);--shd:0 4px 14px rgba(0,0,0,.3);--shd2:0 8px 26px rgba(0,0,0,.4)}
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg2);color:var(--tx);overflow:hidden;height:100vh;width:100vw}
+
+        /* ═══ HEADER (centered title, slim) ═══ */
+        #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--hdr);box-shadow:0 3px 18px rgba(0,0,0,.3);height:56px;display:flex;align-items:center;justify-content:center;padding:0 16px}
+        .hdr-center{text-align:center;flex:1}
+        .hdr-center h1{font-size:15px;font-weight:800;color:var(--htx);line-height:1.2}
+        .hdr-center h1 .g{color:var(--gold)}
+        .hdr-center .sub{font-size:9.5px;color:var(--hm);font-weight:400;margin-top:1px}
+        .hdr-left,.hdr-right{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:5px}
+        .hdr-left{left:14px}
+        .hdr-right{right:14px}
+        .hdr-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 10px rgba(232,168,56,.35)}
+        .hdr-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--htx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:var(--ease)}
+        .hdr-btn:hover{background:rgba(255,255,255,.14);border-color:var(--gold);transform:scale(1.08)}
+
+        /* ═══ MAP ═══ */
+        #map{position:fixed;top:56px;left:0;right:0;bottom:28px;z-index:1}
+
+        /* ═══ SIDEBAR (left, tabbed, properly sized) ═══ */
+        #sidebar{position:fixed;top:64px;left:10px;z-index:800;width:230px;max-height:calc(100vh - 100px);display:flex;flex-direction:column;background:var(--panel);backdrop-filter:var(--blur);border-radius:var(--r-lg);box-shadow:var(--shd);border:1px solid var(--brd);overflow:hidden;transition:var(--ease)}
+        #sidebar.hide{transform:translateX(-250px);opacity:0;pointer-events:none}
+
+        .sb-search{padding:8px 10px 4px;flex-shrink:0;position:relative}
+        .sb-search input{width:100%;padding:8px 30px 8px 10px;border:1px solid var(--brd2);border-radius:50px;font-family:inherit;font-size:11px;color:var(--tx);background:var(--tbg);outline:none;transition:var(--ease)}
+        .sb-search input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(232,168,56,.12)}
+        .sb-search input::placeholder{color:var(--tx3)}
+        .sb-search .si{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--tx3);pointer-events:none}
+        .sdrop{position:absolute;top:100%;left:10px;right:10px;background:var(--ps);border-radius:var(--r-md);box-shadow:var(--shd2);border:1px solid var(--brd);max-height:200px;overflow-y:auto;display:none;z-index:10}
+        .sdrop.open{display:block;animation:sld .2s ease}
+        .sr{padding:7px 10px;cursor:pointer;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--brd);transition:var(--ease);font-size:11px}
+        .sr:last-child{border:none}.sr:hover{background:var(--bg3)}
+        .sr-e{font-size:16px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:6px;flex-shrink:0}
+        .sr-n{font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sr-c{font-size:9px;color:var(--tx3)}
+        .sr-no{padding:12px;text-align:center;color:var(--tx3);font-size:10px}
+
+        .tabs{display:flex;border-bottom:1px solid var(--brd);flex-shrink:0}
+        .tab{flex:1;padding:8px 0 6px;cursor:pointer;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:1px;font-family:inherit;font-size:8px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.3px;transition:var(--ease);border-bottom:2px solid transparent}
+        .tab .ti{font-size:14px}
+        .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+        .tab:hover{color:var(--gold-dark)}
+
+        .sb-body{flex:1;overflow-y:auto;padding:0}
+        .tc{display:none;padding:10px}.tc.on{display:block;animation:fdi .15s ease}
+
+        .ly{display:flex;align-items:center;gap:7px;padding:6px;border-radius:var(--r-sm);cursor:pointer;transition:var(--ease)}
+        .ly:hover{background:var(--bg3)}
+        .sw{appearance:none;width:30px;height:16px;background:var(--tx3);border-radius:8px;position:relative;cursor:pointer;transition:var(--ease);flex-shrink:0}
+        .sw::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;background:#fff;border-radius:50%;transition:var(--ease)}
+        .sw:checked{background:var(--gold)}.sw:checked::after{left:16px}
+        .ly-l{font-size:11px;font-weight:500;color:var(--tx2);flex:1}
+        .ly-c{font-size:9px;font-weight:700;color:#fff;background:var(--navy);padding:1px 5px;border-radius:50px;min-width:20px;text-align:center}
+        [data-theme="dark"] .ly-c{background:var(--gold-dark);color:var(--navy-dark)}
+
+        .fb{display:flex;flex-direction:column;gap:4px}
+        .f-b{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1.5px solid var(--brd2);background:var(--ps);border-radius:var(--r-md);cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:var(--tx2);transition:var(--ease)}
+        .f-b:hover{border-color:var(--gold)}.f-b.on{border-color:var(--gold);background:rgba(232,168,56,.07);color:var(--tx)}
+        .fe{font-size:14px}
+
+        /* Legend colored */
+        .lg-s{margin-bottom:6px;border-radius:var(--r-md);padding:8px;border:1px solid transparent}
+        .lg-s.t{background:var(--tour-bg);border-color:var(--tour-bd)}
+        .lg-s.h{background:var(--hist-bg);border-color:var(--hist-bd)}
+        .lg-s.a{background:var(--amen-bg);border-color:var(--amen-bd)}
+        .lg-h{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--tx);margin-bottom:4px;padding-bottom:3px;border-bottom:1px solid var(--brd)}
+        .lg-g{display:grid;grid-template-columns:1fr 1fr;gap:1px 4px}
+        .lg-i{display:flex;align-items:center;gap:3px;padding:1px 0}
+        .lg-e{font-size:12px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .lg-t{font-size:9px;color:var(--tx2);font-weight:500;white-space:nowrap}
+
+        /* ═══ STAT CARDS (floating, right side, vertical) ═══ */
+        #stats-float{position:fixed;top:330px;right:10px;z-index:790;display:flex;flex-direction:column;gap:6px}
+        .sf{background:var(--panel);backdrop-filter:var(--blur);border-radius:var(--r-md);box-shadow:var(--shd);border:1px solid var(--brd);padding:8px 14px;display:flex;align-items:center;gap:8px;min-width:130px;transition:var(--ease)}
+        .sf:hover{transform:translateX(-3px);box-shadow:var(--shd2)}
+        .sf-i{font-size:18px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
+        .sf:nth-child(1) .sf-i{background:rgba(59,130,246,.15)}
+        .sf:nth-child(2) .sf-i{background:rgba(245,158,11,.15)}
+        .sf:nth-child(3) .sf-i{background:rgba(16,185,129,.15)}
+        .sf-n{font-size:16px;font-weight:800;color:var(--tx);line-height:1}
+        .sf-l{font-size:8px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+
+        /* ═══ RIGHT TOOLBAR ═══ */
+        #rtool{position:fixed;top:64px;right:10px;z-index:800;display:flex;flex-direction:column;gap:4px}
+        .rb{width:36px;height:36px;border-radius:50%;border:1px solid var(--brd);background:var(--ps);box-shadow:var(--shd);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:var(--ease);color:var(--tx);position:relative}
+        .rb:hover{transform:scale(1.1);box-shadow:var(--shd2)}
+        .rb:active{transform:scale(.93)}
+        .rb.pls{animation:pulse 1.5s infinite}
+        .rb .tp{position:absolute;right:calc(100% + 6px);top:50%;transform:translateY(-50%);background:var(--navy-dark);color:#fff;font-size:9px;font-weight:600;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:var(--ease)}
+        .rb:hover .tp{opacity:1}
+        .rb.act{background:var(--gold);color:var(--navy-dark);border-color:var(--gold)}
+
+        /* ═══ SIDEBAR TOGGLE (when sidebar hidden) ═══ */
+        #sb-open{position:fixed;top:64px;left:10px;z-index:810;width:36px;height:36px;border-radius:50%;border:1px solid var(--brd);background:var(--ps);box-shadow:var(--shd);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:15px;color:var(--tx);transition:var(--ease)}
+        #sb-open:hover{transform:scale(1.1)}
+        #sb-open.show{display:flex}
+
+        /* ═══ BASEMAP (bottom-right) ═══ */
+        #bm{position:fixed;bottom:38px;right:10px;z-index:800}
+        .bm-in{background:var(--panel);backdrop-filter:var(--blur);border-radius:var(--r-md);box-shadow:var(--shd);border:1px solid var(--brd);padding:6px;display:flex;align-items:center;gap:4px}
+        .bm-b{width:44px;height:30px;border-radius:4px;border:2px solid var(--brd2);cursor:pointer;background-size:cover;background-position:center;transition:var(--ease);position:relative;display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+        .bm-b::after{content:attr(data-l);font-size:6.5px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);padding:0 2px 1px}
+        .bm-b:hover{transform:scale(1.05)}.bm-b.on{border-color:var(--gold);box-shadow:0 0 0 1.5px rgba(232,168,56,.3)}
+        .bm-o{background:linear-gradient(180deg,#b8d4e3,#8fb8d0)}
+        .bm-s{background:linear-gradient(180deg,#2d4a2e,#1a2e1a)}
+        .bm-t{background:linear-gradient(180deg,#d4c4a0,#a89070)}
+
+        /* ═══ COORD BAR (above zoom controls) ═══ */
+        #cbar{position:fixed;top:64px;left:250px;z-index:800;background:var(--panel);backdrop-filter:var(--blur);border-radius:var(--r-md);box-shadow:var(--shd);border:1px solid var(--brd);padding:4px 10px;font-size:9px;color:var(--tx2);font-weight:500;display:flex;align-items:center;gap:6px}
+        #cbar .cv{color:var(--gold);font-weight:700}
+
+        /* ═══ MEASURE ═══ */
+        #mbar{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:900;background:var(--ps);border-radius:50px;box-shadow:var(--shd2);border:1px solid var(--gold);padding:6px 16px;font-size:11px;font-weight:600;color:var(--tx);display:none;align-items:center;gap:6px}
+        #mbar.vis{display:flex;animation:sld .2s ease}
+        #mbar .mx{cursor:pointer;font-size:13px;color:var(--tx3);transition:var(--ease)}
+        #mbar .mx:hover{color:#ef4444}
+
+        /* ═══ WELCOME ═══ */
+        #wc{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:900;width:420px;max-width:calc(100% - 24px);background:var(--ps);border-radius:var(--r-xl);box-shadow:var(--shd2);border:1px solid var(--brd);padding:18px 22px;transition:var(--ease);animation:slu .5s ease}
+        #wc.gone{opacity:0;transform:translateX(-50%) translateY(16px);pointer-events:none}
+        .wc-t{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+        .wc-tt{font-size:15px;font-weight:800;color:var(--tx);display:flex;align-items:center;gap:6px}
+        .wc-x{width:26px;height:26px;border-radius:50%;border:none;background:var(--bg3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--tx2);transition:var(--ease)}
+        .wc-x:hover{background:#ef4444;color:#fff}
+        .wc-d{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:12px}
+        .wc-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+        .wc-f{display:flex;align-items:center;gap:5px;padding:5px 7px;background:var(--bg3);border-radius:var(--r-sm);font-size:9.5px;font-weight:500;color:var(--tx2)}
+
+        /* ═══ STATS MODAL ═══ */
+        #smod{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center}
+        #smod.vis{display:flex;animation:fdi .2s ease}
+        .smc{background:var(--ps);border-radius:var(--r-xl);box-shadow:var(--shd2);border:1px solid var(--brd);width:480px;max-width:calc(100% - 24px);max-height:80vh;overflow-y:auto;animation:sci .3s ease}
+        .smh{padding:16px 20px 10px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+        .smh h2{font-size:16px;font-weight:800;color:var(--tx)}
+        .smx{width:28px;height:28px;border-radius:50%;border:none;background:var(--bg3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--ease);color:var(--tx2)}
+        .smx:hover{background:#ef4444;color:#fff}
+        .smb{padding:16px 20px}
+        .sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+        .sb{padding:12px;border-radius:var(--r-md);border:1px solid var(--brd);text-align:center;transition:var(--ease)}
+        .sb:hover{transform:translateY(-2px);box-shadow:var(--shd)}
+        .sb.bl{background:var(--tour-bg);border-color:var(--tour-bd)}
+        .sb.am{background:var(--hist-bg);border-color:var(--hist-bd)}
+        .sb.gr{background:var(--amen-bg);border-color:var(--amen-bd)}
+        .sb.pu{background:rgba(139,92,246,.07);border-color:rgba(139,92,246,.18)}
+        .sb-i{font-size:24px;margin-bottom:3px}.sb-n{font-size:24px;font-weight:800;color:var(--tx)}.sb-l{font-size:8px;color:var(--tx3);text-transform:uppercase;font-weight:600;letter-spacing:.3px}
+        .sst{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid var(--brd)}
+        .br{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+        .br-e{font-size:12px;width:16px;text-align:center}.br-n{font-size:9.5px;font-weight:500;color:var(--tx2);width:80px;text-transform:capitalize}
+        .br-t{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+        .br-f{height:100%;border-radius:3px;transition:width .6s ease}
+        .br-f.bl{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+        .br-f.am{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+        .br-f.gr{background:linear-gradient(90deg,#10b981,#34d399)}
+        .br-c{font-size:9.5px;font-weight:700;color:var(--tx);width:22px;text-align:right}
+
+        /* ═══ INFO PANEL (about Hallein) ═══ */
+        #info-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center}
+        #info-modal.vis{display:flex;animation:fdi .2s ease}
+        .info-card{background:var(--ps);border-radius:var(--r-xl);box-shadow:var(--shd2);border:1px solid var(--brd);width:460px;max-width:calc(100% - 24px);max-height:80vh;overflow-y:auto;padding:22px;animation:sci .3s ease}
+        .info-card h2{font-size:18px;font-weight:800;color:var(--tx);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+        .info-card .info-sub{font-size:10px;color:var(--tx3);margin-bottom:14px}
+        .info-card p{font-size:12px;color:var(--tx2);line-height:1.6;margin-bottom:10px}
+        .info-facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+        .info-fact{background:var(--bg3);border-radius:var(--r-md);padding:10px;text-align:center}
+        .info-fact-i{font-size:22px;margin-bottom:3px}
+        .info-fact-v{font-size:14px;font-weight:800;color:var(--tx)}
+        .info-fact-l{font-size:8px;color:var(--tx3);text-transform:uppercase;font-weight:600}
+
+        /* ═══ POPUP ═══ */
+        .leaflet-popup-content-wrapper{border-radius:var(--r-lg)!important;padding:0!important;box-shadow:var(--shd2)!important;overflow:hidden;border:none!important;background:var(--ps)!important}
+        .leaflet-popup-content{margin:0!important;width:255px!important;font-family:'Plus Jakarta Sans',sans-serif!important}
+        .leaflet-popup-tip{box-shadow:0 2px 6px rgba(0,0,0,.12)!important;background:var(--ps)!important}
+        .ph{padding:10px 12px 8px;background:linear-gradient(135deg,var(--navy-dark),var(--navy));color:#fff}
+        .ph .pe{font-size:22px;display:block;margin-bottom:2px}
+        .ph h3{font-size:12.5px;font-weight:700;line-height:1.25;margin-bottom:3px}
+        .pb{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:50px;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+        .pb.tourism{background:rgba(59,130,246,.2);color:#93c5fd}
+        .pb.historic{background:rgba(245,158,11,.2);color:#fcd34d}
+        .pb.amenity{background:rgba(16,185,129,.2);color:#6ee7b7}
+        .pbd{padding:8px 12px;background:var(--ps)}
+        .pr{display:flex;align-items:flex-start;gap:5px;padding:3px 0;border-bottom:1px solid var(--brd)}
+        .pr:last-child{border:none}
+        .pri{font-size:10px;width:14px;flex-shrink:0;text-align:center;margin-top:1px}
+        .prt{font-size:10px;color:var(--tx2);line-height:1.25}
+        .prt strong{color:var(--tx)}
+        .pf{padding:0 12px 8px;background:var(--ps)}
+        .pgm{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;padding:7px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:var(--navy-dark);border:none;border-radius:var(--r-md);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;transition:var(--ease)}
+        .pgm:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(232,168,56,.35)}
+
+        /* ═══ MARKERS ═══ */
+        .em{display:flex;align-items:center;justify-content:center;width:30px!important;height:30px!important;background:#fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,.22);border:2px solid #fff;transition:transform .2s,box-shadow .2s}
+        .em:hover{transform:rotate(-45deg) scale(1.15);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+        .em .ei{transform:rotate(45deg);font-size:13px;line-height:1}
+        .em.tm{border-color:#3b82f6;background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+        .em.hm{border-color:#f59e0b;background:linear-gradient(135deg,#fffbeb,#fef3c7)}
+        .em.am{border-color:#10b981;background:linear-gradient(135deg,#ecfdf5,#d1fae5)}
+
+        /* Clusters */
+        .marker-cluster-small{background:rgba(26,58,92,.14)!important}.marker-cluster-small div{background:var(--navy)!important;color:#fff!important;font-family:'Plus Jakarta Sans',sans-serif!important;font-weight:700!important;font-size:11px!important}
+        .marker-cluster-medium{background:rgba(232,168,56,.18)!important}.marker-cluster-medium div{background:var(--gold)!important;color:var(--navy-dark)!important;font-family:'Plus Jakarta Sans',sans-serif!important;font-weight:700!important;font-size:11px!important}
+        .marker-cluster-large{background:rgba(232,168,56,.28)!important}.marker-cluster-large div{background:var(--gold-dark)!important;color:#fff!important;font-family:'Plus Jakarta Sans',sans-serif!important;font-weight:700!important;font-size:12px!important}
+
+        /* ═══ FOOTER ═══ */
+        #foot{position:fixed;bottom:0;left:0;right:0;z-index:900;background:var(--foot);padding:5px 16px;text-align:center;font-size:9.5px;color:rgba(255,255,255,.45);border-top:1px solid rgba(255,255,255,.05);height:28px;display:flex;align-items:center;justify-content:center}
+        #foot span{color:var(--gold);font-weight:600}
+
+        /* ═══ LOADING ═══ */
+        #ldr{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,var(--navy-dark),var(--navy));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s,visibility .5s}
+        #ldr.gone{opacity:0;visibility:hidden;pointer-events:none}
+        .lr{width:44px;height:44px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}
+
+        /* ═══ LEAFLET ═══ */
+        .leaflet-control-zoom{border:none!important;box-shadow:var(--shd)!important;border-radius:var(--r-md)!important;overflow:hidden;margin-bottom:10px!important}
+        .leaflet-control-zoom a{width:30px!important;height:30px!important;line-height:30px!important;font-size:15px!important;color:var(--tx)!important;background:var(--ps)!important;border-bottom-color:var(--brd)!important}
+        .leaflet-control-zoom a:hover{background:var(--bg3)!important}
+        .leaflet-control-attribution{font-size:7.5px!important;background:rgba(255,255,255,.6)!important;padding:1px 4px!important;margin-bottom:0!important}
+        [data-theme="dark"] .leaflet-control-attribution{background:rgba(0,0,0,.4)!important;color:rgba(255,255,255,.4)!important}
+        .leaflet-control-scale{margin-bottom:8px!important;margin-left:8px!important}
+        .leaflet-control-scale-line{border:2px solid var(--navy)!important;border-top:none!important;background:rgba(255,255,255,.75)!important;font-size:8px!important;font-family:'Plus Jakarta Sans',sans-serif!important;padding:2px 6px 1px!important;line-height:1.3!important;height:auto!important;box-shadow:0 1px 4px rgba(0,0,0,.1)!important}
+        [data-theme="dark"] .leaflet-control-scale-line{background:rgba(30,41,59,.75)!important;border-color:var(--gold)!important;color:var(--tx2)!important}
+
+        /* ═══ DARK MAP TILES ═══ */
+        .leaflet-tile-pane.dark-tiles{filter:brightness(0.7) invert(1) contrast(1.1) hue-rotate(200deg) saturate(0.4) brightness(0.8)}
+        [data-theme="dark"] .leaflet-control-zoom a{color:var(--tx)!important;background:var(--ps)!important}
+
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,168,56,.4)}50%{box-shadow:0 0 0 10px rgba(232,168,56,0)}}
+        @keyframes sld{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slu{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        @keyframes fdi{from{opacity:0}to{opacity:1}}
+        @keyframes sci{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--tx3);border-radius:10px}
+
+        @media(max-width:768px){
+            .hdr-center h1{font-size:11px}.hdr-center .sub{font-size:8px}
+            #sidebar{width:200px;top:62px}
+            #stats-float{top:280px;right:10px}.sf{padding:5px 8px;min-width:100px}.sf-n{font-size:13px}.sf-i{width:24px;height:24px;font-size:14px}
+            #rtool{top:62px}
+            #wc{width:320px}.wc-g{grid-template-columns:1fr 1fr}
+            #cbar{left:210px;top:62px}
+        }
+        @media(max-width:480px){
+            #stats-float{display:none}
+            #sidebar{width:180px}
+            .hdr-icon{display:none}
+        }
+    </style>
+</head>
+<body>
+
+<div id="ldr"><div class="lr"></div><div style="color:#fff;font-size:13px;font-weight:700">🗺️ Memuat Peta Hallein...</div><div style="color:rgba(255,255,255,.35);font-size:10px">Mempersiapkan data destinasi pariwisata</div></div>
+
+<!-- HEADER -->
+<header id="hdr">
+    <div class="hdr-left"><div class="hdr-icon">🗺️</div></div>
+    <div class="hdr-center">
+        <h1>Peta Persebaran Fasilitas & Destinasi Pariwisata <span class="g">Hallein</span></h1>
+        <div class="sub">Salzburg, Austria &nbsp;|&nbsp; Sumber : OpenStreetMap &nbsp;|&nbsp; Tahun : 2026</div>
+    </div>
+    <div class="hdr-right">
+        <button class="hdr-btn" id="btheme" onclick="togTheme()" title="Mode Gelap/Terang">🌙</button>
+        <button class="hdr-btn" onclick="openStats()" title="Statistik">📊</button>
+        <button class="hdr-btn" onclick="openInfo()" title="Info Hallein">ℹ️</button>
+        <button class="hdr-btn" onclick="togFS()" title="Layar Penuh">⛶</button>
+    </div>
+</header>
+
+<!-- FLOATING STAT CARDS (right side, below toolbar) -->
+<div id="stats-float">
+    <div class="sf"><div class="sf-i">🏨</div><div><div class="sf-n" id="sn1">0</div><div class="sf-l">Wisata</div></div></div>
+    <div class="sf"><div class="sf-i">🏰</div><div><div class="sf-n" id="sn2">0</div><div class="sf-l">Bersejarah</div></div></div>
+    <div class="sf"><div class="sf-i">🍽️</div><div><div class="sf-n" id="sn3">0</div><div class="sf-l">Kuliner</div></div></div>
+</div>
+
+<!-- SIDEBAR -->
+<button id="sb-open" onclick="togSB(true)">☰</button>
+<div id="sidebar">
+    <div class="sb-search">
+        <input type="text" id="sinp" placeholder="Cari destinasi..." autocomplete="off">
+        <span class="si">🔍</span>
+        <div class="sdrop" id="sdr"></div>
+    </div>
+    <div class="tabs">
+        <button class="tab on" data-t="layers" onclick="stab('layers')"><span class="ti">🗂️</span>Layer</button>
+        <button class="tab" data-t="filter" onclick="stab('filter')"><span class="ti">🎯</span>Filter</button>
+        <button class="tab" data-t="legend" onclick="stab('legend')"><span class="ti">📋</span>Legenda</button>
+    </div>
+    <div class="sb-body">
+        <div class="tc on" id="tc-layers">
+            <button class="f-b" style="width:100%;margin-bottom:8px;justify-content:center;border-color:var(--brd2)" id="btn-tog-all" onclick="togAllL()">👁️ Sembunyikan Semua Layer</button>
+            <label class="ly"><input type="checkbox" class="sw" id="sw-t" checked onchange="togL('tourism')"><span class="ly-l">🏨 Wisata</span><span class="ly-c" id="cn-t">0</span></label>
+            <label class="ly"><input type="checkbox" class="sw" id="sw-h" checked onchange="togL('historic')"><span class="ly-l">🏰 Bersejarah</span><span class="ly-c" id="cn-h">0</span></label>
+            <label class="ly"><input type="checkbox" class="sw" id="sw-a" checked onchange="togL('amenity')"><span class="ly-l">🍽️ Kuliner</span><span class="ly-c" id="cn-a">0</span></label>
+            <label class="ly"><input type="checkbox" class="sw" id="sw-b" checked onchange="togL('boundary')"><span class="ly-l">📐 Batas Distrik</span><span class="ly-c" style="background:#333">—</span></label>
+            <div style="margin-top:8px;padding:7px;background:var(--bg3);border-radius:var(--r-sm);font-size:9px;color:var(--tx3);text-align:center">💡 Klik marker untuk melihat detail informasi</div>
+        </div>
+        <div class="tc" id="tc-filter">
+            <div class="fb">
+                <button class="f-b on" id="fa" onclick="filt('all')"><span class="fe">🌍</span>Semua Kategori</button>
+                <button class="f-b" id="ft" onclick="filt('tourism')"><span class="fe">🏨</span>Fasilitas Wisata</button>
+                <button class="f-b" id="fh" onclick="filt('historic')"><span class="fe">🏰</span>Situs Bersejarah</button>
+                <button class="f-b" id="fk" onclick="filt('amenity')"><span class="fe">🍽️</span>Kuliner & Amenitas</button>
+            </div>
+        </div>
+        <div class="tc" id="tc-legend">
+            <div class="lg-s t">
+                <div class="lg-h">🏨 Fasilitas Wisata</div>
+                <div class="lg-g">
+                    <div class="lg-i"><span class="lg-e">🏨</span><span class="lg-t">Hotel</span></div>
+                    <div class="lg-i"><span class="lg-e">🛏️</span><span class="lg-t">Hostel</span></div>
+                    <div class="lg-i"><span class="lg-e">🏠</span><span class="lg-t">Rumah Tamu</span></div>
+                    <div class="lg-i"><span class="lg-e">🔭</span><span class="lg-t">Titik Pandang</span></div>
+                    <div class="lg-i"><span class="lg-e">🎡</span><span class="lg-t">Atraksi Wisata</span></div>
+                    <div class="lg-i"><span class="lg-e">🏛️</span><span class="lg-t">Museum</span></div>
+                    <div class="lg-i"><span class="lg-e">⛺</span><span class="lg-t">Pondok Alpine</span></div>
+                    <div class="lg-i"><span class="lg-e">🏔️</span><span class="lg-t">Chalet</span></div>
+                    <div class="lg-i"><span class="lg-e">🖼️</span><span class="lg-t">Galeri</span></div>
+                    <div class="lg-i"><span class="lg-e">🎨</span><span class="lg-t">Karya Seni</span></div>
+                </div>
+            </div>
+            <div class="lg-s h">
+                <div class="lg-h">🏰 Situs Bersejarah</div>
+                <div class="lg-g">
+                    <div class="lg-i"><span class="lg-e">🏰</span><span class="lg-t">Kastil</span></div>
+                    <div class="lg-i"><span class="lg-e">🗿</span><span class="lg-t">Reruntuhan</span></div>
+                    <div class="lg-i"><span class="lg-e">⚱️</span><span class="lg-t">Situs Arkeologi</span></div>
+                    <div class="lg-i"><span class="lg-e">🗽</span><span class="lg-t">Monumen</span></div>
+                    <div class="lg-i"><span class="lg-e">🕊️</span><span class="lg-t">Monumen Peringatan</span></div>
+                    <div class="lg-i"><span class="lg-e">⛏️</span><span class="lg-t">Tambang</span></div>
+                    <div class="lg-i"><span class="lg-e">🪨</span><span class="lg-t">Shaft Tambang</span></div>
+                </div>
+            </div>
+            <div class="lg-s a">
+                <div class="lg-h">🍽️ Kuliner & Amenitas</div>
+                <div class="lg-g">
+                    <div class="lg-i"><span class="lg-e">🍽️</span><span class="lg-t">Restoran</span></div>
+                    <div class="lg-i"><span class="lg-e">☕</span><span class="lg-t">Kafe</span></div>
+                    <div class="lg-i"><span class="lg-e">🍺</span><span class="lg-t">Bar</span></div>
+                    <div class="lg-i"><span class="lg-e">🍻</span><span class="lg-t">Pub</span></div>
+                    <div class="lg-i"><span class="lg-e">🍔</span><span class="lg-t">Makanan Cepat Saji</span></div>
+                    <div class="lg-i"><span class="lg-e">⛪</span><span class="lg-t">Tempat Ibadah</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RIGHT TOOLBAR -->
+<div id="rtool">
+    <button class="rb" id="bl" onclick="locMe()"><span class="tp">Lokasi Saya</span>📍</button>
+    <button class="rb" onclick="fitA()"><span class="tp">Zoom Semua</span>🔲</button>
+    <button class="rb" id="bm-m" onclick="togM()"><span class="tp">Ukur Jarak</span>📏</button>
+    <button class="rb" onclick="rnd()"><span class="tp">Destinasi Acak</span>🎲</button>
+    <button class="rb" onclick="nearest()"><span class="tp">Terdekat</span>🧭</button>
+    <button class="rb" onclick="togSB()"><span class="tp">Panel</span>☰</button>
+</div>
+
+<!-- BASEMAP -->
+<div id="bm"><div class="bm-in"><div class="bm-b bm-o on" data-l="OSM" onclick="sBm('osm')"></div><div class="bm-b bm-s" data-l="Satelit" onclick="sBm('satellite')"></div><div class="bm-b bm-t" data-l="Topo" onclick="sBm('topo')"></div></div></div>
+
+<!-- COORD BAR -->
+<div id="cbar">🌐 <span id="clat" class="cv">—</span>, <span id="clng" class="cv">—</span> &nbsp;|&nbsp; Zoom: <span id="czm" class="cv">—</span></div>
+
+<!-- MEASURE -->
+<div id="mbar"><span>📏</span> Jarak: <strong id="mdst">0</strong> &nbsp;|&nbsp; Klik peta untuk titik, klik ganda selesai <span class="mx" onclick="stopM()">✕</span></div>
+
+<!-- WELCOME -->
+<div id="wc">
+    <div class="wc-t"><div class="wc-tt">🏔️ Selamat Datang!</div><button class="wc-x" onclick="clWc()">✕</button></div>
+    <div class="wc-d">Jelajahi peta interaktif persebaran fasilitas & destinasi pariwisata di Distrik Hallein, Salzburg, Austria. Temukan hotel, restoran, museum, kastil, dan atraksi wisata dengan mudah!</div>
+    <div class="wc-g">
+        <div class="wc-f"><span>🔍</span>Cari Destinasi</div>
+        <div class="wc-f"><span>📏</span>Ukur Jarak</div>
+        <div class="wc-f"><span>🎲</span>Destinasi Acak</div>
+        <div class="wc-f"><span>🧭</span>Cari Terdekat</div>
+        <div class="wc-f"><span>🌙</span>Mode Gelap</div>
+        <div class="wc-f"><span>📊</span>Statistik</div>
+    </div>
+</div>
+
+<!-- STATS MODAL -->
+<div id="smod" onclick="if(event.target===this)clSt()"><div class="smc"><div class="smh"><h2>📊 Statistik Destinasi</h2><button class="smx" onclick="clSt()">✕</button></div><div class="smb" id="smb"></div></div></div>
+
+<!-- INFO MODAL -->
+<div id="info-modal" onclick="if(event.target===this)clInfo()">
+    <div class="info-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><h2>🏔️ Distrik Hallein</h2><div class="info-sub">Salzburg, Austria</div></div>
+            <button class="smx" onclick="clInfo()">✕</button>
+        </div>
+        <p>Distrik Hallein (Bezirk Hallein) adalah salah satu distrik di negara bagian Salzburg, Austria. Terletak di bagian selatan Salzburg, distrik ini dikenal dengan Tambang Garam Hallein, Sungai Salzach, dan pemandangan Alpen yang menakjubkan.</p>
+        <p>Hallein memiliki sejarah panjang sebagai pusat penambangan garam sejak zaman Celtic, dan kota tua Hallein menawarkan arsitektur bersejarah yang indah serta berbagai destinasi kuliner.</p>
+        <div class="info-facts">
+            <div class="info-fact"><div class="info-fact-i">📐</div><div class="info-fact-v">668 km²</div><div class="info-fact-l">Luas Wilayah</div></div>
+            <div class="info-fact"><div class="info-fact-i">👥</div><div class="info-fact-v">~62.000</div><div class="info-fact-l">Populasi</div></div>
+            <div class="info-fact"><div class="info-fact-i">🏘️</div><div class="info-fact-v">13</div><div class="info-fact-l">Gemeinde</div></div>
+            <div class="info-fact"><div class="info-fact-i">🏔️</div><div class="info-fact-v">2.522 m</div><div class="info-fact-l">Titik Tertinggi</div></div>
+        </div>
+    </div>
+</div>
+
+<div id="map"></div>
+<footer id="foot">© 2026 <span>Ahmad Fauzi Ridwan</span> &nbsp;|&nbsp; Universitas Bakrie &nbsp;|&nbsp; Kapita Selekta Sistem Informasi</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+const EM={hotel:'🏨',hostel:'🛏️',guest_house:'🏠',viewpoint:'🔭',attraction:'🎡',museum:'🏛️',alpine_hut:'⛺',chalet:'🏔️',gallery:'🖼️',artwork:'🎨',castle:'🏰',ruins:'🗿',archaeological_site:'⚱️',monument:'🗽',memorial:'🕊️',mine:'⛏️',mine_shaft:'🪨',restaurant:'🍽️',cafe:'☕',bar:'🍺',pub:'🍻',fast_food:'🍔',place_of_worship:'⛪'};
+const ID_NAME={hotel:'Hotel',hostel:'Hostel',guest_house:'Rumah Tamu',viewpoint:'Titik Pandang',attraction:'Atraksi Wisata',museum:'Museum',alpine_hut:'Pondok Alpine',chalet:'Chalet',gallery:'Galeri',artwork:'Karya Seni',castle:'Kastil',ruins:'Reruntuhan',archaeological_site:'Situs Arkeologi',monument:'Monumen',memorial:'Mon. Peringatan',mine:'Tambang',mine_shaft:'Shaft Tambang',restaurant:'Restoran',cafe:'Kafe',bar:'Bar',pub:'Pub',fast_food:'Makanan Cepat Saji',place_of_worship:'Tempat Ibadah'};
+const TT=['hotel','hostel','guest_house','viewpoint','attraction','museum','alpine_hut','chalet','gallery','artwork'];
+const HT=['castle','ruins','archaeological_site','monument','memorial','mine','mine_shaft'];
+const AT=['restaurant','cafe','bar','pub','fast_food','place_of_worship'];
+
+let map,bms={},curBm='osm',cg={tourism:null,historic:null,amenity:null},bndLy=null;
+let allM=[],tc={},userMk=null,isDark=false;
+let measuring=false,mLine=null,mPts=[],mMks=[];
+
+function initMap(){
+    map=L.map('map',{center:[47.68,13.10],zoom:11,zoomControl:true,zoomSnap:1,zoomDelta:1,wheelPxPerZoomLevel:80,maxZoom:19,minZoom:8,fadeAnimation:true,inertia:true,inertiaDeceleration:3000,bounceAtZoomLimits:false});
+    map.zoomControl.setPosition('bottomleft');
+    L.control.scale({imperial:false,position:'bottomleft'}).addTo(map);
+    bms.osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://openstreetmap.org">OSM</a>',maxZoom:19,updateWhenZooming:false,updateWhenIdle:true});
+    bms.satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'&copy; Esri',maxZoom:19,updateWhenZooming:false,updateWhenIdle:true});
+    bms.topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenTopoMap',maxZoom:17,updateWhenZooming:false,updateWhenIdle:true});
+    bms.osm.addTo(map);
+    const co={maxClusterRadius:45,spiderfyOnMaxZoom:true,showCoverageOnHover:false,zoomToBoundsOnClick:true,animate:true,animateAddingMarkers:true,disableClusteringAtZoom:16,spiderfyDistanceMultiplier:1.5};
+    cg.tourism=L.markerClusterGroup({...co});cg.historic=L.markerClusterGroup({...co});cg.amenity=L.markerClusterGroup({...co});
+    map.addLayer(cg.tourism);map.addLayer(cg.historic);map.addLayer(cg.amenity);
+    map.on('mousemove',e=>{document.getElementById('clat').textContent=e.latlng.lat.toFixed(5);document.getElementById('clng').textContent=e.latlng.lng.toFixed(5)});
+    map.on('zoomend',()=>{document.getElementById('czm').textContent=map.getZoom()});
+    document.getElementById('czm').textContent=map.getZoom();
+    map.on('click',onMC);map.on('dblclick',onMD);
+}
+
+function mkI(e,c){return L.divIcon({className:'',html:'<div class="em '+c+'"><span class="ei">'+e+'</span></div>',iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-30]})}
+
+function mkP(p,ll,cat,type,emoji){
+    const nm=p.name||'Tempat Tanpa Nama';
+    const cl=cat==='tourism'?'Fasilitas Wisata':cat==='historic'?'Situs Bersejarah':'Kuliner';
+    const tl=ID_NAME[type]||type.replace(/_/g,' ');
+    let r='<div class="pr"><span class="pri">📌</span><span class="prt"><strong>Tipe:</strong> '+tl+'</span></div>';
+    if(p['addr:street'])r+='<div class="pr"><span class="pri">📍</span><span class="prt"><strong>Alamat:</strong> '+p['addr:street']+'</span></div>';
+    if(p.opening_hours)r+='<div class="pr"><span class="pri">🕐</span><span class="prt"><strong>Jam:</strong> '+p.opening_hours+'</span></div>';
+    if(p.phone)r+='<div class="pr"><span class="pri">📞</span><span class="prt"><strong>Telp:</strong> '+p.phone+'</span></div>';
+    if(p.rooms)r+='<div class="pr"><span class="pri">🚪</span><span class="prt"><strong>Kamar:</strong> '+p.rooms+'</span></div>';
+    if(p.beds)r+='<div class="pr"><span class="pri">🛏️</span><span class="prt"><strong>Bed:</strong> '+p.beds+'</span></div>';
+    if(p.religion)r+='<div class="pr"><span class="pri">🙏</span><span class="prt"><strong>Agama:</strong> '+p.religion+'</span></div>';
+    r+='<div class="pr"><span class="pri">🌐</span><span class="prt"><strong>Koordinat:</strong> '+ll[0].toFixed(5)+', '+ll[1].toFixed(5)+'</span></div>';
+    return '<div><div class="ph"><span class="pe">'+emoji+'</span><h3>'+nm+'</h3><span class="pb '+cat+'">'+cl+' · '+tl+'</span></div><div class="pbd">'+r+'</div><div class="pf"><a href="https://www.google.com/maps?q='+ll[0]+','+ll[1]+'" target="_blank" rel="noopener" class="pgm">🗺️ Lihat di Google Maps</a></div></div>';
+}
+
+function catg(p){
+    if(p.tourism&&TT.includes(p.tourism))return{c:'tourism',t:p.tourism};
+    if(p.amenity&&AT.includes(p.amenity))return{c:'amenity',t:p.amenity};
+    if(p.historic&&HT.includes(p.historic))return{c:'historic',t:p.historic};
+    return null;
+}
+
+async function loadData(){
+    try{
+        const[a,b,c]=await Promise.all([fetch('data/Commercial_hallein.geojson'),fetch('data/Public_hallein.geojson'),fetch('data/clipping_boundary.geojson')]);
+        const d1=await a.json(),d2=await b.json(),d3=await c.json();
+        let ct={tourism:0,historic:0,amenity:0};
+        function proc(fs){fs.forEach(f=>{if(!f.geometry||f.geometry.type!=='Point')return;const r=catg(f.properties);if(!r)return;const{c:cat,t:type}=r;const emoji=EM[type]||'📍';const ll=[f.geometry.coordinates[1],f.geometry.coordinates[0]];const cls=cat==='tourism'?'tm':cat==='historic'?'hm':'am';const mk=L.marker(ll,{icon:mkI(emoji,cls)});mk.bindPopup(mkP(f.properties,ll,cat,type,emoji),{maxWidth:270,closeButton:true});cg[cat].addLayer(mk);ct[cat]++;tc[type]=(tc[type]||0)+1;allM.push({marker:mk,name:f.properties.name||'',category:cat,type,emoji,latlng:ll})})}
+        proc(d1.features);proc(d2.features);
+        let gj=d3.type==='MultiPolygon'?{type:'Feature',geometry:d3,properties:{}}:d3;
+        bndLy=L.geoJSON(gj,{style:{color:'#000000',weight:3,opacity:.85,fillOpacity:0,dashArray:'10,6',lineCap:'round',lineJoin:'round'}}).addTo(map);
+        document.getElementById('sn1').textContent=ct.tourism;document.getElementById('sn2').textContent=ct.historic;document.getElementById('sn3').textContent=ct.amenity;
+        document.getElementById('cn-t').textContent=ct.tourism;document.getElementById('cn-h').textContent=ct.historic;document.getElementById('cn-a').textContent=ct.amenity;
+        if(bndLy)map.fitBounds(bndLy.getBounds(),{padding:[40,40],animate:true,duration:1});
+        setTimeout(()=>document.getElementById('ldr').classList.add('gone'),700);
+    }catch(e){console.error(e);document.getElementById('ldr').innerHTML='<div style="color:#fff;text-align:center"><div style="font-size:40px;margin-bottom:10px">⚠️</div><div style="font-size:14px;font-weight:600">Error</div><div style="font-size:10px;opacity:.4;margin-top:3px">'+e.message+'</div></div>'}
+}
+
+// Sidebar
+function togSB(forceOpen){
+    const sb=document.getElementById('sidebar'),op=document.getElementById('sb-open');
+    if(forceOpen===true){sb.classList.remove('hide');op.classList.remove('show');return}
+    if(forceOpen===false){sb.classList.add('hide');op.classList.add('show');return}
+    sb.classList.toggle('hide');op.classList.toggle('show',sb.classList.contains('hide'));
+}
+function stab(t){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.tc').forEach(c=>c.classList.toggle('on',c.id==='tc-'+t))}
+
+// Layers
+let allLayersVis = true;
+function togAllL() {
+    allLayersVis = !allLayersVis;
+    document.getElementById('btn-tog-all').innerHTML = allLayersVis ? '👁️ Sembunyikan Semua Layer' : '👁️‍🗨️ Tampilkan Semua Layer';
+    ['tourism','historic','amenity','boundary'].forEach(n=>{
+        const id=n==='boundary'?'sw-b':n==='tourism'?'sw-t':n==='historic'?'sw-h':'sw-a';
+        const sw=document.getElementById(id);
+        if(sw.checked !== allLayersVis) {
+            sw.checked = allLayersVis;
+            if(n==='boundary'){if(allLayersVis&&bndLy)map.addLayer(bndLy);else if(bndLy)map.removeLayer(bndLy);}
+            else {if(allLayersVis)map.addLayer(cg[n]);else map.removeLayer(cg[n]);}
+        }
+    });
+}
+function togL(n){
+    if(n==='boundary'){const c=document.getElementById('sw-b').checked;if(c&&bndLy)map.addLayer(bndLy);else if(bndLy)map.removeLayer(bndLy);}
+    else {
+        const id=n==='tourism'?'sw-t':n==='historic'?'sw-h':'sw-a';
+        const c=document.getElementById(id).checked;
+        if(c)map.addLayer(cg[n]);else map.removeLayer(cg[n]);
+    }
+    const anyC = ['sw-t','sw-h','sw-a','sw-b'].some(id=>document.getElementById(id).checked);
+    allLayersVis = anyC;
+    document.getElementById('btn-tog-all').innerHTML = allLayersVis ? '👁️ Sembunyikan Semua Layer' : '👁️‍🗨️ Tampilkan Semua Layer';
+}
+
+// Filter
+function filt(f){
+    document.querySelectorAll('.f-b').forEach(b=>b.classList.remove('on'));
+    document.getElementById(f==='all'?'fa':f==='tourism'?'ft':f==='historic'?'fh':'fk').classList.add('on');
+    ['tourism','historic','amenity'].forEach(l=>{
+        const id=l==='tourism'?'sw-t':l==='historic'?'sw-h':'sw-a';
+        const sw=document.getElementById(id);
+        if(f==='all'||f===l){sw.checked=true;map.addLayer(cg[l])}else{sw.checked=false;map.removeLayer(cg[l])}
+    });
+}
+
+// Basemap
+function sBm(n){if(curBm===n)return;map.removeLayer(bms[curBm]);bms[n].addTo(map);curBm=n;document.querySelectorAll('.bm-b').forEach(b=>b.classList.remove('on'));document.querySelector('.bm-'+(n==='satellite'?'s':n==='topo'?'t':'o')).classList.add('on');const tp=document.querySelector('.leaflet-tile-pane');if(tp&&isDark){if(n==='satellite')tp.classList.remove('dark-tiles');else tp.classList.add('dark-tiles')}}
+
+// Theme
+function togTheme(){isDark=!isDark;document.documentElement.setAttribute('data-theme',isDark?'dark':'light');document.getElementById('btheme').textContent=isDark?'☀️':'🌙';const tp=document.querySelector('.leaflet-tile-pane');if(tp){if(isDark&&curBm!=='satellite')tp.classList.add('dark-tiles');else tp.classList.remove('dark-tiles')}}
+
+// Fullscreen
+function togFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});else document.exitFullscreen()}
+
+// Search
+const sinp=document.getElementById('sinp'),sdr=document.getElementById('sdr');
+sinp.addEventListener('input',function(){const q=this.value.trim().toLowerCase();if(q.length<2){sdr.classList.remove('open');return}const ms=allM.filter(m=>m.name&&m.name.toLowerCase().includes(q)).slice(0,8);if(!ms.length)sdr.innerHTML='<div class="sr-no">Tidak ditemukan</div>';else sdr.innerHTML=ms.map((m,i)=>'<div class="sr" onmousedown="goTo('+i+',\''+q.replace(/'/g,"\\'")+'\')"><span class="sr-e">'+m.emoji+'</span><div><div class="sr-n">'+hl(m.name,q)+'</div><div class="sr-c">'+(m.category==='tourism'?'Wisata':m.category==='historic'?'Bersejarah':'Kuliner')+' · '+(ID_NAME[m.type]||m.type)+'</div></div></div>').join('');sdr.classList.add('open')});
+sinp.addEventListener('blur',()=>setTimeout(()=>sdr.classList.remove('open'),200));
+sinp.addEventListener('focus',()=>{if(sinp.value.trim().length>=2)sinp.dispatchEvent(new Event('input'))});
+function hl(t,q){const i=t.toLowerCase().indexOf(q);if(i===-1)return t;return t.slice(0,i)+'<strong style="color:var(--gold-dark)">'+t.slice(i,i+q.length)+'</strong>'+t.slice(i+q.length)}
+function goTo(i,q){const ms=allM.filter(m=>m.name&&m.name.toLowerCase().includes(q)).slice(0,8);const m=ms[i];if(m){map.flyTo(m.latlng,16,{duration:1});setTimeout(()=>m.marker.openPopup(),1000);sdr.classList.remove('open');sinp.value=m.name}}
+
+// Geolocation
+function locMe(){const b=document.getElementById('bl');b.classList.add('pls');if(!navigator.geolocation){alert('Geolokasi tidak didukung.');b.classList.remove('pls');return}navigator.geolocation.getCurrentPosition(p=>{const{latitude:la,longitude:ln}=p.coords;if(userMk)map.removeLayer(userMk);userMk=L.marker([la,ln],{icon:L.divIcon({className:'',html:'<div style="width:14px;height:14px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(59,130,246,.2),0 2px 6px rgba(0,0,0,.3)"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);userMk.bindPopup('<div style="font-family:Plus Jakarta Sans,sans-serif;padding:4px;text-align:center;font-size:10px"><strong>📍 Lokasi Anda</strong></div>');map.flyTo([la,ln],15,{duration:1.2});b.classList.remove('pls')},e=>{alert('Gagal: '+e.message);b.classList.remove('pls')},{enableHighAccuracy:true,timeout:10000})}
+function fitA(){if(bndLy)map.flyToBounds(bndLy.getBounds(),{padding:[50,50],duration:1})}
+
+// Random
+function rnd(){const nm=allM.filter(m=>m.name);if(!nm.length)return;const m=nm[Math.floor(Math.random()*nm.length)];map.flyTo(m.latlng,16,{duration:1.2});setTimeout(()=>m.marker.openPopup(),1200)}
+
+// Nearest
+function nearest(){const c=map.getCenter();let md=Infinity,nr=null;allM.forEach(m=>{const d=map.distance(c,L.latLng(m.latlng[0],m.latlng[1]));if(d<md){md=d;nr=m}});if(nr){map.flyTo(nr.latlng,16,{duration:1});setTimeout(()=>nr.marker.openPopup(),1000)}}
+
+// Measure
+function togM(){measuring=!measuring;const b=document.getElementById('bm-m'),i=document.getElementById('mbar');if(measuring){b.classList.add('act');i.classList.add('vis');map.getContainer().style.cursor='crosshair'}else stopM()}
+function stopM(){measuring=false;document.getElementById('bm-m').classList.remove('act');document.getElementById('mbar').classList.remove('vis');map.getContainer().style.cursor='';if(mLine){map.removeLayer(mLine);mLine=null}mMks.forEach(m=>map.removeLayer(m));mMks=[];mPts=[];document.getElementById('mdst').textContent='0'}
+function onMC(e){if(!measuring)return;mPts.push(e.latlng);const mk=L.circleMarker(e.latlng,{radius:4,color:'#e8a838',fillColor:'#e8a838',fillOpacity:1,weight:2}).addTo(map);mMks.push(mk);if(mPts.length>1){if(mLine)map.removeLayer(mLine);mLine=L.polyline(mPts,{color:'#e8a838',weight:3,dashArray:'6,6'}).addTo(map);let t=0;for(let i=1;i<mPts.length;i++)t+=mPts[i-1].distanceTo(mPts[i]);document.getElementById('mdst').textContent=t>=1000?(t/1000).toFixed(2)+' km':Math.round(t)+' m'}}
+function onMD(e){if(measuring){e.originalEvent.preventDefault();stopM()}}
+
+// Stats
+function openStats(){
+    const tot=allM.length,tC=allM.filter(m=>m.category==='tourism').length,hC=allM.filter(m=>m.category==='historic').length,aC=allM.filter(m=>m.category==='amenity').length,named=allM.filter(m=>m.name).length;
+    const mx=Math.max(...Object.values(tc),1);
+    let tb='',hb='',ab='';
+    TT.forEach(t=>{const c=tc[t]||0;if(c)tb+=bR(EM[t],ID_NAME[t],c,mx,'bl')});
+    HT.forEach(t=>{const c=tc[t]||0;if(c)hb+=bR(EM[t],ID_NAME[t],c,mx,'am')});
+    AT.forEach(t=>{const c=tc[t]||0;if(c)ab+=bR(EM[t],ID_NAME[t],c,mx,'gr')});
+    document.getElementById('smb').innerHTML='<div class="sg"><div class="sb bl"><div class="sb-i">🏨</div><div class="sb-n">'+tC+'</div><div class="sb-l">Wisata</div></div><div class="sb am"><div class="sb-i">🏰</div><div class="sb-n">'+hC+'</div><div class="sb-l">Bersejarah</div></div><div class="sb gr"><div class="sb-i">🍽️</div><div class="sb-n">'+aC+'</div><div class="sb-l">Kuliner</div></div><div class="sb pu"><div class="sb-i">📍</div><div class="sb-n">'+tot+'</div><div class="sb-l">Total</div></div></div><div class="sst">🏨 Rincian Fasilitas Wisata</div>'+tb+'<div class="sst" style="margin-top:12px">🏰 Rincian Situs Bersejarah</div>'+hb+'<div class="sst" style="margin-top:12px">🍽️ Rincian Kuliner</div>'+ab+'<div style="margin-top:12px;padding:8px;background:var(--bg3);border-radius:var(--r-md);text-align:center;font-size:9.5px;color:var(--tx3)">Bernama: <strong style="color:var(--tx)">'+named+'</strong>/'+tot+' ('+Math.round(named/tot*100)+'%)</div>';
+    document.getElementById('smod').classList.add('vis');
+    setTimeout(()=>{document.querySelectorAll('.br-f').forEach(el=>{el.style.width=el.dataset.w})},50);
+}
+function bR(e,n,c,mx,cl){const p=Math.round(c/mx*100);return '<div class="br"><span class="br-e">'+e+'</span><span class="br-n">'+n+'</span><div class="br-t"><div class="br-f '+cl+'" style="width:0" data-w="'+p+'%"></div></div><span class="br-c">'+c+'</span></div>'}
+function clSt(){document.getElementById('smod').classList.remove('vis')}
+
+// Info
+function openInfo(){document.getElementById('info-modal').classList.add('vis')}
+function clInfo(){document.getElementById('info-modal').classList.remove('vis')}
+
+// Welcome
+function clWc(){document.getElementById('wc').classList.add('gone');setTimeout(()=>{document.getElementById('wc').style.display='none'},400)}
+setTimeout(()=>{if(!document.getElementById('wc').classList.contains('gone'))clWc()},10000);
+
+document.addEventListener('DOMContentLoaded',()=>{initMap();loadData()});
+</script>
+</body>
+</html>
